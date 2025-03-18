@@ -1,0 +1,1103 @@
+[include mainsail.cfg]                  # Include configuration from mainsail.cfg file
+
+[virtual_sdcard]
+path: /home/biqu/printer_data/gcodes    # Path to the virtual SD card directory
+on_error_gcode: CANCEL_PRINT            # G-code to execute on error (defined in CANCEL_PRINT macro)
+
+[gcode_arcs]
+resolution: 0.1                         # Arc interpolation resolution, handles G2/G3 commands
+
+[exclude_object]                        # Exclude object for cancellation
+
+[force_move]
+enable_force_move: true                 # Enable force move feature
+
+#####################################################################
+##	                 EBB SB2209(RP2040) Config
+#####################################################################
+[mcu EBBCan]
+canbus_uuid: 7973f8af339e              # Unique identifier for the CAN bus interface
+# Acceleration sensor on cartographer sensor is recommended, 
+# so the configuration of EBB is commented
+#[adxl345]
+#cs_pin: EBBCan:gpio1                   # Chip select pin
+#spi_software_sclk_pin: EBBCan:gpio2    # SPI clock pin
+#spi_software_mosi_pin: EBBCan:gpio0    # SPI master out slave in pin
+#spi_software_miso_pin: EBBCan:gpio3    # SPI master in slave out pin
+#axes_map: z,-y,x                       # Axis mapping settings
+##SHAPER_CALIBRATE
+
+
+[mcu]                                   # Main MCU configuration
+# serial: /dev/serial/by-id/usb-Klipper_stm32h723xx_slipper-if00  # Serial port setting, this line is commented out
+canbus_uuid: 94559be52c9d               # CAN bus UUID
+canbus_interface: can0                  # CAN bus interface
+
+#####################################################################
+##	                 Temperature Monitoring
+#####################################################################
+[temperature_sensor EBB_NTC]            # EBB_NTC temperature sensor configuration
+sensor_type: Generic 3950               # Sensor type
+sensor_pin: EBBCan:gpio28               # Sensor pin
+
+[temperature_sensor BTT-MCU]            # BTT-MCU temperature sensor configuration       
+sensor_type: temperature_mcu            # Sensor type
+
+[temperature_sensor SOC]                # BTT-PI temperature sensor configuration
+sensor_type: temperature_host           # Sensor type
+
+#####################################################################
+##                     Model and Acceleration
+#####################################################################
+[printer]                             # Printer configuration
+kinematics: corexy                    # Printer type: corexy
+max_velocity: 600                    # Maximum velocity (max 300)
+max_accel: 4500                      # Maximum acceleration (max 4000) 
+max_z_velocity: 50                    # Maximum Z-axis velocity
+max_z_accel: 100                      # Maximum Z-axis acceleration
+minimum_cruise_ratio: 0.5             # Default 0.5
+square_corner_velocity: 25            # Square corner velocity
+
+################################################################################
+##               Manta M8P 2.0 Stepper Motor Sensorless Config
+################################################################################
+## !!WARNING!!
+## Drivers as plugged in left to right on the manta m8p v2 are as follows:
+## x0, y0, z0, z1, z2, --, x1, y1
+################################################################################
+################################################################################
+## TMC Auto Tune
+################################################################################
+[motor_constants siboor-42sth48-2504(s45)]
+#Siboor BOM Voron Trident AWD
+resistance: 0.9
+inductance: 0.0016
+holding_torque: 0.6
+max_current: 2               
+steps_per_revolution: 200
+
+[autotune_tmc stepper_x]
+motor: siboor-42sth48-2504(s45)
+
+[autotune_tmc stepper_y]
+motor: siboor-42sth48-2504(s45)
+
+[autotune_tmc stepper_x1]
+motor: siboor-42sth48-2504(s45)
+
+[autotune_tmc stepper_y1]
+motor: siboor-42sth48-2504(s45)
+
+#####################################################################
+##                            X Axis
+#####################################################################
+
+[stepper_x]
+step_pin: PE6                         # X-axis motor pulse pin setting
+dir_pin: !PE5                         # X-axis motor direction pin setting
+enable_pin: !PC14                     # X-axis motor enable pin setting
+microsteps: 32                        # Motor microsteps setting
+rotation_distance: 40                 # Active pulley circumference mm (2GT-20T pulley 40, 2GT-16T pulley 32)
+full_steps_per_rotation: 200          # Number of pulses required for a single motor revolution (1.8 degree motor: 200, 0.9 degree motor: 400)
+endstop_pin: EBBCan:gpio24            # Limit switch PIN setting (X-)
+position_min: 0                       # X-axis minimum travel - software limit
+position_endstop: 350                 # Mechanical reset point coordinates for X-axis
+position_max: 350                     # X-axis maximum travel - software limit
+homing_speed: 150                     # Homing speed maximum 100
+homing_retract_dist: 5                # Setback distance after the first trigger of the homing switch
+homing_positive_dir: true             # Direction of homing (generally no change required)
+
+[tmc2240 stepper_x]
+cs_pin: PC13                          # Chip select pin
+spi_software_sclk_pin: PG8            # SPI clock pin
+spi_software_mosi_pin: PG6            # SPI master out slave in pin
+spi_software_miso_pin: PG7            # SPI master in slave out pin
+driver_TPFD: 0                        # Driver setting
+run_current: 1.5                      # Running current
+interpolate: True                     # Interpolation
+
+
+[stepper_x1]
+step_pin: PD4                         # X1-axis motor pulse pin setting
+dir_pin: PD3                         # X1-axis motor direction pin setting
+enable_pin: !PD6                      # X1-axis motor enable pin setting
+microsteps: 32                        # Motor microsteps setting
+rotation_distance: 40                 # Active pulley circumference mm (2GT-20T pulley 40, 2GT-16T pulley 32)
+full_steps_per_rotation: 200          # Number of pulses required for a single motor revolution (1.8 degree motor: 200, 0.9 degree motor: 400)
+
+[tmc2240 stepper_x1]
+cs_pin: PD5                           # Chip select pin
+spi_software_sclk_pin: PG8            # SPI clock pin
+spi_software_mosi_pin: PG6            # SPI master out slave in pin
+spi_software_miso_pin: PG7            # SPI master in slave out pin
+driver_TPFD: 0                        # Driver setting
+run_current: 1.5                      # Running current
+interpolate: True                     # Interpolation
+
+#####################################################################
+##                           Y Aixs
+#####################################################################
+
+[stepper_y]
+step_pin: PC7                         # Y-axis motor pulse pin setting
+dir_pin: !PC8                         # Y-axis motor direction pin setting
+enable_pin: !PD2                      # Y-axis motor enable pin setting
+microsteps: 32                        # Motor microsteps setting
+rotation_distance: 40                 # Active pulley circumference mm (2GT-20T pulley 40, 2GT-16T pulley 32)
+full_steps_per_rotation: 200          # Number of pulses required for a single motor revolution (1.8 degree motor: 200, 0.9 degree motor: 400)
+endstop_pin: PF2                      # Limit switch PIN setting (Y-)
+position_min: 0                       # Y-axis minimum travel - software limit
+position_endstop: 360               # Mechanical reset point coordinates for Y-axis (change to 350 for 350 models)
+position_max: 360                   # Y-axis maximum travel - software limit (change to 350 for 350 models)
+homing_speed: 150                     # Homing speed maximum 100
+homing_retract_dist: 5                # Setback distance after the first trigger of the homing switch
+homing_positive_dir: true             # Direction of homing (generally no change required)
+
+[tmc2240 stepper_y]
+cs_pin: PC6                           # Chip select pin
+spi_software_sclk_pin: PG8            # SPI clock pin
+spi_software_mosi_pin: PG6            # SPI master out slave in pin
+spi_software_miso_pin: PG7            # SPI master in slave out pin
+driver_TPFD: 0                        # Driver setting
+run_current: 1.5                      # Running current
+interpolate: True                     # Interpolation
+
+[stepper_y1]
+step_pin: PE2                         # Y1-axis motor pulse pin setting
+dir_pin: PE1                         # Y1-axis motor direction pin setting
+enable_pin: !PE4                      # Y1-axis motor enable pin setting
+microsteps: 32                        # Motor microsteps setting
+rotation_distance: 40                 # Active pulley circumference mm (2GT-20T pulley 40, 2GT-16T pulley 32)
+full_steps_per_rotation: 200          # Number of pulses required for a single motor revolution (1.8 degree motor: 200, 0.9 degree motor: 400)
+
+[tmc2240 stepper_y1]
+cs_pin: PE3                           # Chip select pin
+spi_software_sclk_pin: PG8            # SPI clock pin
+spi_software_mosi_pin: PG6            # SPI master out slave in pin
+spi_software_miso_pin: PG7            # SPI master in slave out pin
+driver_TPFD: 0                        # Driver setting
+run_current: 1.5                      # Running current
+interpolate: True                     # Interpolation
+
+
+#####################################################################
+#    -------z1------- 
+#   |                 |
+#   |                 |
+#   |                 |
+#   |                 |
+#   |                 |
+#   |                 |
+#  z0---   display ---z2
+#####################################################################
+##                  Z0 Axis
+#####################################################################
+[stepper_z]
+step_pin: PB8                         # Z0-axis motor pulse pin setting
+dir_pin: !PB7                         # Z0-axis motor direction pin setting
+enable_pin: !PE0                      # Z0-axis motor enable pin setting
+microsteps: 16                        # Motor microsteps setting
+rotation_distance: 4                  # Active pulley circumference mm
+endstop_pin: probe:z_virtual_endstop  # Limit switch PIN setting (Z0-)
+position_max: 235                     # Z0-axis maximum travel - software limit
+position_min: -5.0                    # Z0-axis minimum travel - software limit
+homing_speed: 20                      # Homing speed
+homing_retract_dist: 0                # Setback distance after the first trigger of the homing switch
+homing_positive_dir: False            # Direction of homing (generally no change required)
+
+#--------------------------------------------------------------------
+[tmc2209 stepper_z]                   # TMC2209 driver settings
+uart_pin: PB9                         # Driver communication port
+interpolate: true                     # Enable 256 microstep interpolation
+run_current: 0.8                      # Motor running current (mA)
+hold_current: 0.8                     # Holding current (mA)
+
+#--------------------------------------------------------------------
+[stepper_z1]
+step_pin: PB4                         # Z1-axis motor pulse pin setting
+dir_pin: !PB3                         # Z1-axis motor direction pin setting
+enable_pin: !PB6                      # Z1-axis motor enable pin setting
+microsteps: 16                        # Motor microsteps setting
+rotation_distance: 4                  # Active pulley circumference mm
+
+#--------------------------------------------------------------------
+[tmc2209 stepper_z1]                  # TMC2209 driver settings
+uart_pin: PB5                         # Driver communication port
+interpolate: true                     # Enable 256 microstep interpolation
+run_current: 0.8                      # Motor running current (mA)
+hold_current: 0.8                     # Holding current (mA)
+
+#--------------------------------------------------------------------
+[stepper_z2]
+step_pin: PG13                        # Z2-axis motor pulse pin setting
+dir_pin: !PG12                        # Z2-axis motor direction pin setting
+enable_pin: !PG15                     # Z2-axis motor enable pin setting
+microsteps: 16                        # Motor microsteps setting
+rotation_distance: 4                  # Active pulley circumference mm
+
+#--------------------------------------------------------------------
+[tmc2209 stepper_z2]                  # TMC2209 driver settings
+uart_pin: PG14                        # Driver communication port
+interpolate: true                     # Enable 256 microstep interpolation
+run_current: 0.8                      # Motor running current (mA)
+hold_current: 0.8                     # Holding current (mA)
+
+#####################################################################
+##                  Extruder Motor
+#####################################################################
+
+[extruder]
+step_pin: EBBCan:gpio18              # Step pin
+dir_pin: EBBCan:gpio19               # Direction pin, "!" indicates logic inversion
+enable_pin: !EBBCan:gpio17           # Enable pin, "!" indicates logic inversion
+full_steps_per_rotation: 200         # Number of pulses required for a single motor revolution (1.8 degree motor: 200, 0.9 degree motor: 400)
+microsteps: 16                       # Microsteps setting
+## When calibrating the extruder, update the following value
+## Assume you request 100mm feed but get 98mm,
+## New value = old value x (actual extruded length / target length)
+## 22.6789511 is our recommended value
+gear_ratio: 50:10                    # Gear ratio
+rotation_distance: 20.68             # Rotation distance    
+nozzle_diameter: 0.400               # Nozzle diameter
+filament_diameter: 1.750             # Filament diameter
+heater_pin: EBBCan:gpio7             # Heater pin
+#control: pid                          # Control method
+#pid_Kp: 24.328                        # Proportional parameter of the PID controller
+#pid_Ki: 1.908                         # Integral parameter of the PID controller
+#pid_Kd: 77.543                        # Derivative parameter of the PID controller
+min_temp: -20                        # Minimum temperature
+max_temp: 350                        # Maximum temperature
+min_extrude_temp: 170                # Minimum extrude temperature
+pressure_advance: 0                  # Pressure advance - try to keep pressure below 1.0
+pressure_advance_smooth_time: 0.040   # Pressure advance smooth time - default is 0.040
+## Nozzle temperature PID calibration command: "PID_CALIBRATE HEATER=extruder TARGET=245"
+sensor_type: MAX31865                # Temperature sensor type
+sensor_pin: EBBCan:gpio9             # Sensor pin
+spi_software_sclk_pin: EBBCan:gpio10 # SPI clock pin
+spi_software_mosi_pin: EBBCan:gpio8  # SPI master out slave in pin
+spi_software_miso_pin: EBBCan:gpio11 # SPI master in slave out pin
+rtd_nominal_r: 100                   # RTD nominal resistance
+rtd_reference_r: 430                 # RTD reference resistance
+rtd_num_of_wires: 2                  # Number of wires for the RTD
+
+[tmc2209 extruder]
+uart_pin: EBBCan:gpio20              # UART communication pin
+interpolate: true                    # Enable 256 microstep interpolation
+run_current: 0.60                    # Running current
+
+#--------------------------------------------------------------------
+[verify_heater extruder]             # Heater block temperature tolerance configuration
+max_error: 120                       # Maximum error
+check_gain_time: 120                 # Tolerance time
+hysteresis: 50                       # Tolerance temperature
+heating_gain: 2                      # Heating gain
+
+#####################################################################
+##                  Heated Bed
+#####################################################################
+[heater_bed]
+heater_pin: PA1                        # (BE0) Heater pin
+sensor_pin: PB1                        # Sensor interface (TB) sensor pin
+sensor_type: ATC Semitec 104GT-2       # ATC Semitec 104GT-2 temperature sensor type
+#control: pid                            # Control method
+## Heated bed temperature PID calibration command: "PID_CALIBRATE HEATER=heater_bed TARGET=100"
+#pid_kp: 53.467                          # PID Kp value
+#pid_ki: 0.931                           # PID Ki value
+#pid_kd: 767.921                         # PID Kd value
+min_temp: -20                          # Minimum temperature
+max_temp: 135                          # Maximum temperature
+max_power: 1.0                         # Maximum power
+
+#####################################################################
+##                  Idle Timeout for Heated Bed
+#####################################################################
+
+[idle_timeout]
+timeout: 1800                # Turn off heated bed if idle for more than 30 minutes
+
+#####################################################################
+# 	                 Cartographer V3 （ADXL345）
+#####################################################################
+
+[scanner]
+canbus_uuid: 5f789989d0a7                
+# 5f789989d0a7
+#    Fill in the UUID that was just recorded           
+x_offset: 0                       
+#    adjust for your cartographers offset from nozzle to middle of coil
+y_offset: 23                         
+#    adjust for your cartographers offset from nozzle to middle of coil
+backlash_comp: 0.5
+#   Backlash compensation distance for removing Z backlash before measuring
+#   the sensor response.
+# 
+#   Offsets are measured from the centre of your coil, to the tip of your nozzle 
+#   on a level axis. It is vital that this is accurate. 
+#calibration_method: touch
+#    leave this as touch unless you want to use scan only for everything. 
+sensor: cartographer
+#    this must be set as cartographer unless using IDM etc.
+sensor_alt: carto
+#    alternate name to call commands. CARTO_TOUCH etc
+scanner_touch_z_offset: -0.09         
+#    This is the default and will be overwritten and added to the DO NOT SAVE area by using UI to save z offset
+mesh_runs: 2
+#    Number of passes to make during mesh scan.
+
+[adxl345]
+cs_pin: scanner:PA3             # Chip select pin for ADXL345 accelerometer
+spi_bus: spi1                   # SPI bus used for communication
+
+[resonance_tester]
+accel_chip: adxl345             # Specifies ADXL345 accelerometer for resonance testing
+probe_points:
+    175, 175, 20                # Coordinates of the probe points for resonance testing
+
+
+#####################################################################
+##                  Bed Mesh Calibration
+#####################################################################
+[bed_mesh]
+zero_reference_position: 175,175  
+#    This option is suitable for the 350 model. 
+#    set this to the middle of your bed
+speed: 500 
+#    movement speed of toolhead during bed mesh
+horizontal_move_z: 5
+#    height of scanner during bed mesh scan
+mesh_min: 30, 30
+#    start point of bed mesh [X, Y]
+mesh_max: 315, 320
+#    end point of bed mesh [X, Y]
+probe_count: 30, 30
+algorithm: bicubic
+mesh_pps: 2, 2            # specifies how many points to interpolate for each segment along the X and Y axes
+bicubic_tension: 0.2      # Algorithm interpolation, no movement
+
+#####################################################################
+##                    LED XXL Daylight on a Stick
+#####################################################################
+[led caselight] 
+white_pin: PF8                         # Mainboard pin
+cycle_time: 0.005                # PWM cycle time
+hardware_pwm: True              # Enable to use hardware PWM instead of software PWM
+initial_WHITE: 0.4               # White pin value on startup
+
+#####################################################################
+##                  Fans
+#####################################################################
+
+[heater_fan hotend_fan]          # Hotend fan
+pin: EBBCan:gpio14               # Hotend fan pin
+heater: extruder                 # Associated heating device
+heater_temp: 50.0                # Temperature to start the fan
+cycle_time: 0.01                 # Cycle time
+
+#--------------------------------------------------------------------
+
+[heater_fan Skirt_fan]           # Skirt fan 
+pin: PF9                         # FAN-2
+cycle_time: 0.00003              # Cycle time
+shutdown_speed: 0.0              # Closing speed (Please do not change)
+kick_start_time: 0.5             # start-up time (Please do not change)
+heater: heater_bed               # Related equipment: heater_bed
+heater_temp: 50                  # How many degrees does the heat bed reach to activate the fan
+fan_speed: 0.5                   # Fan speed
+
+#--------------------------------------------------------------------
+
+[controller_fan driver_fan]      # Driver cooling fan
+pin: PF6                         # Fan pin 
+cycle_time: 0.01                 # Cycle time
+max_power: 1.0                   # Maximum power
+shutdown_speed: 0.0              # Shutdown speed
+fan_speed: 0.8                   # Fan speed when heater or stepper driver is active (0.0 to 1.0). Default is 1.0.
+idle_timeout: 90                 # Time in seconds to keep the fan running after the stepper driver or heater is no longer active. Default is 30 seconds.
+idle_speed: 0.4                  # Fan speed after the stepper driver is no longer active and before idle_timeout is reached (0.0 to 1.0). Default is fan_speed.
+stepper: stepper_x, stepper_x1, stepper_y, stepper_y1, stepper_z, stepper_z1, stepper_z2              # Active motors
+#Define the name of the heater/stepper configuration section associated with this fan. 
+#If a comma-separated list of heater/stepper names is provided here, the fan will be enabled when any of the given heaters/steppers are enabled.
+#The default heater is "extruder", and the default stepper is all steppers.
+
+#--------------------------------------------------------------------
+
+#Note: The following FAN0/FAN1/FAN2 settings are only applicable when using OrcaSlicer,
+#as only OrcaSlicer allows for the additional configuration of parts cooling fans and filter fans. 
+#If you use other slicing software, please comment out the following configurations.
+# instead of using [fan], we define the default part cooling fan with [fan_generic] here
+# this is the default part cooling fan
+
+[fan_generic fan0]               # 5015 Part cooling Blower 
+pin: EBBCan:gpio13               # Fan pin 
+cycle_time: 0.00003                  # Cycle time
+hardware_pwm: false              # hardware pwm
+#kick_start_time: 1 # Startup time
+#max_power: 1 # MAaximun power
+#off_below: 0.05 # Turn off fan below this value
+
+#--------------------------------------------------------------------
+
+[fan_generic fan2]               # 12032 Auxiliary Part cooling Blower fan2
+pin: PA0                         # Fan pin
+cycle_time: 0.00003              # Cycle time
+hardware_pwm: false              # hardware pwm
+kick_start_time: 0.5             # start-up time (Please do not change)
+
+#--------------------------------------------------------------------
+
+[fan_generic fan3]               # Fume_Pack Exhaust Fan fan3
+pin: PF7                         # Fan pin     
+cycle_time: 0.00003                # Cycle time
+hardware_pwm: false               # hardware pwm
+kick_start_time: 0.5             # start-up time (Please do not change)
+
+#-----------------------------------------------------------------------
+
+[gcode_macro M106]
+gcode:
+    {% set fan = 'fan' + (params.P|int if params.P is defined else 0)|string %}
+    {% set speed = (params.S|float / 255 if params.S is defined else 1.0) %}
+    SET_FAN_SPEED FAN={fan} SPEED={speed}
+
+#####################################################################
+##                            RGB-LED Lights
+#####################################################################
+
+[neopixel hotend_rgb]
+pin: EBBCan:gpio16            # LED pin
+chain_count: 3                # Number of LEDs
+color_order: GRBW             # Color order
+initial_RED: 0.2              # Initial red brightness
+initial_GREEN: 0.2            # Initial green brightness
+initial_BLUE: 0.2             # Initial blue brightness
+
+[neopixel my_neopixel]
+pin: PD15                     # Signal interface
+chain_count: 50               # Number of LEDs
+color_order: GRB              # Color order
+initial_RED: 0.2              # Initial red brightness
+initial_GREEN: 0.2            # Initial green brightness
+initial_BLUE: 0.2             # Initial blue brightness
+
+[gcode_macro STOP_LED]
+gcode:
+    STOP_LED_EFFECTS
+
+[gcode_macro STOP_LED]
+gcode:
+    STOP_LED_EFFECTS
+
+[gcode_macro Rainbow_LED]
+gcode:
+    SET_LED_EFFECT EFFECT=rainbow
+
+[led_effect rainbow] 
+leds:    
+  neopixel:my_neopixel
+layers:
+  gradient 0.50 0.50 top (1,0,0),(0,1,0),(0,0,1) 
+frame_rate: 10
+
+[led_effect extruder_temp]
+leds:
+    neopixel:my_neopixel
+layers:
+    heater 0.50 0.50 top (0.0,1.0,0.0),(1.0,0.0,0.0),(0.0,0.0,1.0)
+frame_rate: 10
+heater: extruder
+autostart: true
+
+[led_effect bed_heating]
+leds:
+    neopixel:my_neopixel
+layers:
+    heater 0.50 0.50 top (0.0,1.0,0.0),(1.0,0.0,0.0),(0.0,0.0,1.0)
+frame_rate: 10
+heater: heater_bed
+autostart: true
+
+[led_effect progress_bar]
+leds:
+    neopixel:my_neopixel
+autostart: true
+frame_rate: 10
+layers:
+    progress  -1  0 add         ( 0, 0,   1),( 0, 0.1, 0.6)
+    static     0  0 top         ( 0, 0, 0.1)
+
+
+####################################################################################
+##                                    Homing Override
+####################################################################################
+# [homing_override]
+# axes: z                    # Override homing for the Z axis only
+# set_position_z: 0          # Set the Z position to 0 after homing
+# gcode:
+#     G90                     # Set to absolute positioning mode
+#     G0 Z10 F1200            # Move Z axis to 10mm above the bed at 1200 mm/min
+#     G28 Y                   # Home Y axis
+#     G28 X                   # Home X axis
+#     G1 X175 Y175 F7200      # Move to a specific coordinate (125, 125) at 7200 mm/min
+#     G28 Z                   # Home Z axis again
+[homing_override]
+axes: xyz                   
+set_position_z: 0           # Set the Z position to 0 after homing
+gcode:
+    {% set home_all = 'X' not in params and 'Y' not in params and 'Z' not in params %}
+    
+    {% if home_all or 'Y' in params %}
+      G28 Y
+      G91
+      G1 Y-2
+      G90
+    {% endif %}
+    
+    {% if home_all or 'X' in params %}    
+      G28 X
+      G91
+      G1 X-2
+      G90
+    {% endif %}
+
+    {% if home_all or 'Z' in params %}
+      G90                     # Set to absolute positioning mode
+      G0 Z10 F1200            # Move Z axis to 10mm above the bed at 1200 mm/min
+      G1 X150 Y150 F7200      # Move to a specific coordinate (125, 125) at 7200 mm/min
+      G28 Z                   # Home Z axis
+      G90
+    {% endif %}
+
+
+####################################################################################
+##                                    Z Tilt Adjustment
+####################################################################################
+[z_tilt]
+##  Use Z_TILT_ADJUST to level the bed.
+##  z_positions: Location of toolhead
+z_positions:
+   -50, 18
+   175, 398
+   400, 18
+points:
+   50, 50
+   175, 300
+   300, 50
+##--------------------------------------------------------------------
+
+speed: 350                 # Speed of Z tilt adjustment
+horizontal_move_z: 2       # Z axis move speed for adjustments
+retries: 10                # Number of retries for adjustment points
+retry_tolerance: 0.0075    # Retry tolerance for adjustment accuracy
+
+####################################################################################
+##                                    Chamber Sensor
+####################################################################################
+#[temperature_sensor chamber]
+#sensor_type:  XXX
+#sensor_pin:   XXX
+
+####################################################################################
+##                                    Filament Runout Switch Sensor
+####################################################################################
+#[filament_switch_sensor switch_sensor]
+#switch_pin: ^PF0
+#pause_on_runout: False
+#runout_gcode:
+#  PAUSE # [pause_resume] is required
+#  M117 Filament swtich runout
+#insert_gcode: 
+#  M117 Filament switch insert
+####################################################################################
+##                                    Filament Runout Motion Sensor
+####################################################################################
+#[filament_motion_sensor encoder_sesnor]
+#switch_pin: ^PC15
+#detection_length: 2.88 # accuracy of motion sensor 2.88
+#ectruder: extruder
+#pause_on_runout: False
+#runout_gcode:
+#  PAUSE # [pause_resume] is required
+#  M117 Filament swtich runout
+#insert_gcode: 
+#  M117 Filament switch insert
+
+####################################################################################
+##                                    Motor Sync
+####################################################################################
+
+[motors_sync]
+axes: x,y
+#    Axes on which calibration will be performed.
+accel_chip_x: adxl345 
+accel_chip_y: adxl345 
+#    Accelerometers for vibration collection: adxl345 / mpu9250 / lis2dw,
+#    etc. Are indicated for each axis on which calibration is performed.
+chip_filter: median
+#    Filter type for data from the accelerometer: 'median' works well in
+#    most cases, but some particularly noisy printers (fans, etc.) may
+#    require a more powerful filter - 'kalman'. On lis2dw filters disabled.
+#median_size: 3
+#    Median filter window size.
+#kalman_coeffs: 1.1, 1., 1e-1, 1e-2, .5, 1.
+#    Simple coefficients describing the kalman filter.
+#microsteps: 16
+#    Maximum microstepping displacement of the stepper motor rotor.
+#sync_method: default
+#    Methods for synchronizing two axes on interconnected kinematics:
+#    'alternately' - the axes calibrated alternately, step by step. (default)
+#    'synchronous' - the axes calibrated depending on their magnitude,
+#    trying to keep it at the same level.
+#    Methods for synchronizing axis/axes on NOT-interconnected kinematics:
+#    'sequential' - axes are calibrated sequentially. (default)
+#steps_model: linear, 20000, 0
+#    Mathematical model and its coefficients representing the dependence
+#    of stepper motor microstep displacement on the measured magnitude.
+#max_step_size: 3
+#    The maximum number of microsteps that the motor can take move at time,
+#    to achieve the planned magnitude.
+#axes_steps_diff: 4
+#    The difference in the positions of the motors in microsteps between
+#    the two axes, to update the magnitude of the secondary axis. It is
+#    used in the synchronous method, or in the process of axis alignment
+#    in the alternately method. The typical value is max_step_size + 1.
+#retry_tolerance: 500
+#    The forced threshold to which a pair of stepper motors on one belt
+#    will have to lower the magnitude of the oscillations. It's recommended
+#    to configure in order to filter possible inaccuracies. After several
+#    iterations of starting synchronization, you will find the edge, to
+#    which this parameter should be omitted.
+#retries: 3
+#    The maximum number of repetitions to achieve the forced threshold of
+#    oscillations.
+
+####################################################################################
+##                               ShakeTune
+####################################################################################
+[shaketune]
+result_folder: ~/printer_data/config/ShakeTune_results
+#    Path where the processed results will be stored. If the folder doesn't exist,
+#    it will be automatically created. You can change this if you'd like to store 
+#    results in a different location.
+number_of_results_to_keep: 5
+#    This setting defines how many results you want to keep in the result folder.
+#    Once the specified number is exceeded, older results will be automatically deleted
+#    to free up space on the SD card and avoid cluttering the results folder.
+keep_raw_data: False
+#    If set to True, Shake&Tune will store both the processed graphs and the raw accelerometer
+#    .stdata files in the results folder. This can be useful for debugging or archiving purposes.
+#    Please always attach them when reporting any issues on GitHub or Discord.
+show_macros_in_webui: True
+#    Mainsail and Fluidd doesn't create buttons for system commands (macros that are not part
+#    of the printer.cfg file). This option allow Shake&Tune to inject them into the webui at runtime.
+#    If set to False, the macros will be hidden but still accessible from the console by typing
+#    their names manually, which can be useful if you prefer to encapsulate them into your own macros.
+
+
+
+
+####################################################################################
+####################################################################################
+[gcode_macro Z_TILT_ADJUST]     # IDM/Cartographer optimized 3Z leveling macro
+rename_existing: _Z_TILT_ADJUST
+gcode:
+    SAVE_GCODE_STATE NAME=STATE_Z_TILT         # Save current state for Z tilt adjustment
+    BED_MESH_CLEAR                             # Clear bed mesh
+    {% if not printer.z_tilt.applied %}
+      _Z_TILT_ADJUST horizontal_move_z=10 retry_tolerance=1   # Adjust Z tilt with higher tolerance initially
+    {% endif %}
+    _Z_TILT_ADJUST horizontal_move_z=2          # Fine-tune Z tilt adjustment
+    RESTORE_GCODE_STATE NAME=STATE_Z_TILT       # Restore saved state after adjustment
+
+[gcode_macro LOAD_FILAMENT]
+variable_load_distance:  50
+variable_purge_distance:  25
+gcode:
+    {% set speed = params.SPEED|default(300) %}
+    {% set max_velocity = printer.configfile.settings['extruder'].max_extrude_only_velocity  * 60 %}
+    SAVE_GCODE_STATE NAME=load_state
+    G91
+    G92 E0
+    G1 E{load_distance} F{max_velocity} # fast-load
+    G1 E{purge_distance} F{speed} # purge
+    RESTORE_GCODE_STATE NAME=load_state
+
+[gcode_macro UNLOAD_FILAMENT]
+variable_unload_distance:  80
+variable_purge_distance:  25
+gcode:
+    {% set speed = params.SPEED|default(300) %}
+    {% set max_velocity = printer.configfile.settings['extruder'].max_extrude_only_velocity  * 60 %}
+    SAVE_GCODE_STATE NAME=unload_state
+    G91
+    G92 E0
+    G1 E{purge_distance} F{speed} # purge
+    G1 E-{unload_distance} F{max_velocity} # fast-unload
+    RESTORE_GCODE_STATE NAME=unload_state
+
+####################################################################################
+##                               Probe Calibration Macro
+####################################################################################
+[gcode_macro PROBECALIBRATE]
+# Defines a G-code macro for probe calibration
+gcode:
+    G28                          # Home all axes
+    G0 X175 Y175 Z1 F3600        # Fast move to X150 Y150 Z1 at 3600 mm/min
+    PROBE_CALIBRATE              # Start probe calibration
+
+####################################################################################
+##                               Bed Leveling and Height Calibration Macro
+####################################################################################
+[gcode_macro G32]
+# Defines a G-code macro for bed leveling and height calibration
+gcode:
+    BED_MESH_CLEAR               # Clear bed mesh
+    G28                          # Home all axes
+    Z_TILT_ADJUST                # Perform gantry leveling
+    G28                          # Home all axes
+    G0 X175 Y175 Z30 F3600       # Fast move to X150 Y150 Z30 at 3600 mm/min
+
+#--------------------------------------------------------------------
+[gcode_macro DRAW_LINES]
+gcode:
+    G90                           # Absolute positioning
+    # G92 E0                      # Reset Extruder (commented out for now)
+    # G1 Z5.0  F7200              # Move Z Axis up (commented out for now)
+    G1 X50  Y0         F7200      # Move to start position
+    M83                           # Set extruder to relative mode
+    G1 E15 F400                   # Extrude filament
+    G1 Z0.28 F7200                # Lower Z axis
+    G1 X200 Y0   Z0.28 F1200 E17  # Draw the first line
+    G1 X200 Y0.4 Z0.28 F2400      # Move to side a little
+    G1 X55  Y0.4 Z0.28 F1200 E34  # Draw the second line
+    G92 E0                        # Reset Extruder
+    G90                           # Return to absolute positioning
+
+#----------------------------------------------------------------------
+[gcode_macro PRINT_START]
+gcode:
+  {% set target_bed = params.BED|int %}                  # Target bed temperature
+  {% set target_extruder = params.EXTRUDER|int %}        # Target nozzle temperature
+  {% set x_wait = printer.toolhead.axis_maximum.x|float / 2 %}  # Bed center X
+  {% set y_wait = printer.toolhead.axis_maximum.y|float / 2 %}  # Bed center Y
+
+  # # Capture Start Time
+  # {% set start_time = printer.query_endstops.elapsed_time %}
+  # ECHO "PRINT_START initiated at {start_time:.2f} seconds"
+
+  {% if "xyz" not in printer.toolhead.homed_axes %}
+      G28                                               # If home all axis not done, then home all
+  {% endif %}
+  
+  {% if not printer.motors_sync.applied %}
+    SYNC_MOTORS                                          # Sync motors
+  {% endif %}
+
+  #SET_GCODE_OFFSET Z=0                                   # Reset Z offset
+  G90                                                    # Set to absolute positioning
+
+  SET_DISPLAY_TEXT MSG="Heating Bed: {target_bed}°C"     # Display bed heating message
+  G1 X{x_wait} Y{y_wait} Z15 F9000                       # Move to bed center
+  M190 S{target_bed}                                     # Wait for bed to reach target temperature
+
+  SET_DISPLAY_TEXT MSG="Leveling..."                    # Display leveling message
+  Z_TILT_ADJUST                                          # Perform Z tilt adjustment
+  #G28 Z                                                  # Re-home Z after adjustment
+
+  SET_DISPLAY_TEXT MSG="Bed Mesh Calibration"            # Display mesh calibration message
+  BED_MESH_CALIBRATE                                     # Perform bed mesh calibration
+
+  SET_DISPLAY_TEXT MSG="Calibrating Z Offset"            # Display Z offset calibration message
+  CARTOGRAPHER_TOUCH                                     # Calibrate Z offset
+
+  SET_DISPLAY_TEXT MSG="Heating Nozzle: {target_extruder}°C" # Display nozzle heating message
+  G1 X{x_wait} Y{y_wait} Z15 F9000                       # Move to bed center
+  M109 S{target_extruder}                                # Heat nozzle to target temperature
+
+  # # Print Time Taken to Console
+  # ECHO "PRINT_START completed in {elapsed:.2f} seconds"
+
+  SET_DISPLAY_TEXT MSG="Preparing to Print..."           # Display preparation message
+  G0 X{x_wait - 50} Y4 F10000                            # Move to primeline start point
+  G0 Z0.4                                                # Raise Z to 0.4mm
+  G91                                                    # Switch to relative positioning
+  G1 X100 E20 F1000                                      # Extrude primeline
+  G90                                                    # Switch back to absolute positioning
+  
+  M117 # Clearing text messages from console
+#--------------------------------------------------------------------
+[gcode_macro PRINT_END]
+gcode:
+    {% set th = printer.toolhead %}
+    {% set x_safe = th.position.x + 20 * (1 if th.axis_maximum.x - th.position.x > 20 else -1) %}
+    {% set y_safe = th.position.y + 20 * (1 if th.axis_maximum.y - th.position.y > 20 else -1) %}
+    {% set z_safe = [th.position.z + 2, th.axis_maximum.z]|min %}
+    
+    SAVE_GCODE_STATE NAME=STATE_PRINT_END
+
+    M400                           ; wait for buffer to clear
+    G92 E0                         ; zero the extruder
+    G1 E-2.0 F3600                 ; retract filament
+    
+    TURN_OFF_HEATERS
+    
+    G90                                      ; absolute positioning
+    G0 X{x_safe} Y{y_safe} Z{z_safe} F20000  ; move nozzle to remove stringing
+    G0 X{th.axis_maximum.x//2} Y{th.axis_maximum.y - 2} F3600  ; park nozzle at rear
+    M107                                     ; turn off fan
+    
+    BED_MESH_CLEAR
+
+    # The purpose of the SAVE_GCODE_STATE/RESTORE_GCODE_STATE
+    # command pair is to restore the printer's coordinate system
+    # and speed settings since the commands above change them.
+    # However, to prevent any accidental, unintentional toolhead
+    # moves when restoring the state, explicitly set MOVE=0.
+    RESTORE_GCODE_STATE NAME=STATE_PRINT_END MOVE=0
+
+
+#--------------------------------------------------------------------
+[gcode_macro PAUSE]
+description: Pause the actual running print
+rename_existing: PAUSE_BASE
+# change this if you need more or less extrusion
+variable_extrude: 1.0
+gcode:
+  ##### read E from pause macro #####
+  {% set E = printer["gcode_macro PAUSE"].extrude|float %}
+  ##### set park positon for x and y #####
+  # default is your max posion from your printer.cfg
+  {% set x_park = printer.toolhead.axis_maximum.x|float - 5.0 %}
+  {% set y_park = printer.toolhead.axis_maximum.y|float - 5.0 %}
+  ##### calculate save lift position #####
+  {% set max_z = printer.toolhead.axis_maximum.z|float %}
+  {% set act_z = printer.toolhead.position.z|float %}
+  {% if act_z < (max_z - 2.0) %}
+      {% set z_safe = 2.0 %}
+  {% else %}
+      {% set z_safe = max_z - act_z %}
+  {% endif %}
+  ##### end of definitions #####
+  PAUSE_BASE
+  G91
+  {% if printer.extruder.can_extrude|lower == 'true' %}
+    G1 E-{E} F2100
+  {% else %}
+    {action_respond_info("Extruder not hot enough")}
+  {% endif %}
+  {% if "xyz" in printer.toolhead.homed_axes %}
+    G1 Z{z_safe} F900
+    G90
+    G1 X{x_park} Y{y_park} F6000
+  {% else %}
+    {action_respond_info("Printer not homed")}
+  {% endif %} 
+#--------------------------------------------------------------------
+[gcode_macro RESUME]
+description: Resume the actual running print
+rename_existing: RESUME_BASE
+gcode:
+  ##### read E from pause macro #####
+  {% set E = printer["gcode_macro PAUSE"].extrude|float %}
+  #### get VELOCITY parameter if specified ####
+  {% if 'VELOCITY' in params|upper %}
+    {% set get_params = ('VELOCITY=' + params.VELOCITY)  %}
+  {%else %}
+    {% set get_params = "" %}
+  {% endif %}
+  ##### end of definitions #####
+  {% if printer.extruder.can_extrude|lower == 'true' %}
+    G91
+    G1 E{E} F2100
+  {% else %}
+    {action_respond_info("Extruder not hot enough")}
+  {% endif %}  
+  RESUME_BASE {get_params}
+#--------------------------------------------------------------------
+
+[gcode_macro CANCEL_PRINT]
+# Defines a G-code macro to cancel the actual running print
+description = Cancel the actual running print
+rename_existing = CANCEL_PRINT_BASE
+variable_park = True
+gcode = 
+    G28 Y                                     # Home Y axis
+    _TOOLHEAD_PARK_PAUSE_CANCEL               # Call _TOOLHEAD_PARK_PAUSE_CANCEL macro
+    TURN_OFF_HEATERS                          # Turn off all heaters
+    CANCEL_PRINT_BASE                         # Call CANCEL_PRINT_BASE to cancel print
+
+[gcode_macro DATA_SAMPLE]
+gcode:
+  G90
+  M106 S255
+  RESPOND TYPE=command MSG='Waiting for Coil to cool to 40'
+  M117 Waiting for Coil to cool to 40
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MAXIMUM=40
+  RESPOND TYPE=command MSG='Starting Phase 1 of 4'
+  M117 Starting Phase 1 of 4
+  M106 S0
+  G28
+  G0 Z1
+  M104 S250
+  M140 S110
+  G4 P1000
+  CARTOGRAPHER_STREAM FILENAME=data1
+  M117 Waiting for Coil to heat to 70
+  RESPOND TYPE=command MSG='Waiting for Coil to heat to 70'
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MINIMUM=55
+  CARTOGRAPHER_STREAM FILENAME=data1
+  M104 S0
+  M140 S0
+  M106 S255
+  G0 Z80
+  RESPOND TYPE=command MSG='Waiting for Coil to cool to 40'
+  M117 Waiting for Coil to cool to 40
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MAXIMUM=40
+
+  M117 Starting Phase 2 of 4
+  RESPOND TYPE=command MSG='Starting Phase 2 of 4'
+  M106 S0
+  G28 Z0
+  G0 Z2
+  M104 S250
+  M140 S110
+  G4 P1000
+  CARTOGRAPHER_STREAM FILENAME=data2
+  M117 Waiting for Coil to heat to 70
+  RESPOND TYPE=command MSG='Waiting for Coil to heat to 70'
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MINIMUM=55
+  CARTOGRAPHER_STREAM FILENAME=data2
+  M104 S0
+  M140 S0
+  M106 S255
+  G0 Z80
+  RESPOND TYPE=command MSG='Waiting for Coil to cool to 40'
+  M117 Waiting for Coil to cool to 40
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MAXIMUM=40
+
+  M117 "Starting Phase 3 of 4"
+  RESPOND TYPE=command MSG='Starting Phase 3 of 4'
+  M106 S0
+  G28 Z0
+  G0 Z3
+  M104 S250
+  M140 S110
+  G4 P1000
+  CARTOGRAPHER_STREAM FILENAME=data3
+  M117 Waiting for Coil to heat to 70
+  RESPOND TYPE=command MSG='Waiting for Coil to heat to 70'
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MINIMUM=55
+  CARTOGRAPHER_STREAM FILENAME=data3
+  M104 S0
+  M140 S0
+  M106 S255
+  G0 Z80
+  M117 Waiting for Coil to cool to 40
+  RESPOND TYPE=command MSG='Waiting for Coil to cool to 40'
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MAXIMUM=40
+
+  M117 "Starting Phase 4 of 4"
+  RESPOND TYPE=command MSG='Starting Phase 4 of 4'
+  M106 S0
+  G28 Z0
+  G0 Z5
+  M104 S250
+  M140 S110
+  G4 P1000
+  CARTOGRAPHER_STREAM FILENAME=data4
+  M117 Waiting for Coil to heat to 70
+  RESPOND TYPE=command MSG='Waiting for Coil to heat to 70'
+  TEMPERATURE_WAIT SENSOR='temperature_sensor cartographer_coil' MINIMUM=55
+  CARTOGRAPHER_STREAM FILENAME=data4
+  M104 S0
+  M140 S0
+  RESPOND TYPE=command MSG='Testing complete, please move files using: mv ~/klipper/data1 ~/klipper/data2 ~/klipper/data3 ~/klipper/data4 ~/cartographer-klipper/'
+  M117 "Testing complete, please move files using: mv ~/klipper/data1 ~/klipper/data2 ~/klipper/data3 ~/klipper/data4 ~/cartographer-klipper/"
+  RESPOND TYPE=command MSG='Follow the remaining instructions here: https://docs.cartographer3d.com/cartographer-probe/advanced-features/temperature-differential-calibration-beta'
+  M117 "Follow the remaining instructions here: https://docs.cartographer3d.com/cartographer-probe/advanced-features/temperature-differential-calibration-beta"
+
+#*# <---------------------- SAVE_CONFIG ---------------------->
+#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-generated.
+#*#
+#*# [bed_mesh default]
+#*# version = 1
+#*# points =
+#*# 	0.074392, 0.066688, 0.053938, 0.052739, 0.055012, 0.055437, 0.051379, 0.052727, 0.050017, 0.041945, 0.042810, 0.042371, 0.036890, 0.030148, 0.031943, 0.033796, 0.029919, 0.031719, 0.028942, 0.027186, 0.022933, 0.021635, 0.019144, 0.014681, 0.012995, 0.018387, 0.020683, 0.013190, 0.007544, 0.005751
+#*# 	0.065246, 0.056418, 0.048019, 0.040568, 0.042431, 0.044970, 0.043606, 0.044339, 0.042715, 0.037385, 0.037728, 0.040559, 0.034549, 0.028641, 0.031840, 0.033109, 0.031047, 0.031998, 0.029562, 0.024720, 0.022418, 0.019298, 0.016633, 0.015186, 0.017408, 0.020558, 0.018297, 0.020510, 0.010589, 0.009401
+#*# 	0.054190, 0.047606, 0.039720, 0.032660, 0.033169, 0.032010, 0.031003, 0.036446, 0.036843, 0.031520, 0.034027, 0.035555, 0.030446, 0.025163, 0.031617, 0.033430, 0.030106, 0.029983, 0.025528, 0.021556, 0.021682, 0.018215, 0.019397, 0.014148, 0.020962, 0.025612, 0.022584, 0.016700, 0.011740, 0.017594
+#*# 	0.046207, 0.040020, 0.031087, 0.029617, 0.026925, 0.026624, 0.026027, 0.027952, 0.027246, 0.029095, 0.027367, 0.030912, 0.029108, 0.025922, 0.027214, 0.031591, 0.028963, 0.026595, 0.025170, 0.019229, 0.020811, 0.014890, 0.018079, 0.015581, 0.022268, 0.027055, 0.028320, 0.021416, 0.013737, 0.013577
+#*# 	0.038831, 0.031312, 0.027000, 0.022247, 0.023578, 0.021481, 0.017361, 0.021561, 0.021551, 0.019517, 0.019540, 0.027290, 0.023381, 0.023149, 0.025005, 0.027707, 0.026618, 0.023465, 0.021746, 0.017578, 0.017318, 0.013925, 0.017146, 0.015456, 0.020601, 0.027435, 0.028092, 0.022499, 0.017559, 0.019437
+#*# 	0.032243, 0.025352, 0.017673, 0.017399, 0.014716, 0.012572, 0.014502, 0.016936, 0.015837, 0.016846, 0.016358, 0.018161, 0.017033, 0.017493, 0.020259, 0.024165, 0.021886, 0.022115, 0.018527, 0.015479, 0.015908, 0.014630, 0.015849, 0.014598, 0.024528, 0.029384, 0.032303, 0.026983, 0.022727, 0.018056
+#*# 	0.018652, 0.017440, 0.009822, 0.007556, 0.009872, 0.006627, 0.006390, 0.009855, 0.012486, 0.002376, 0.008815, 0.011828, 0.011290, 0.009808, 0.014388, 0.017233, 0.016780, 0.017871, 0.013484, 0.009670, 0.009278, 0.010246, 0.011690, 0.014806, 0.020752, 0.029390, 0.032888, 0.028024, 0.019504, 0.022134
+#*# 	0.018318, 0.011915, 0.003956, 0.002313, 0.005486, 0.006501, 0.002608, 0.005455, 0.005452, 0.005909, 0.002082, 0.007905, 0.005567, 0.004236, 0.009816, 0.012295, 0.013208, 0.011982, 0.009815, 0.006197, 0.007284, 0.009915, 0.013211, 0.013819, 0.022054, 0.029736, 0.033831, 0.030572, 0.026580, 0.023093
+#*# 	0.006564, 0.000850, -0.001919, -0.003704, 0.000600, -0.003910, -0.000096, 0.001110, -0.001411, -0.002033, -0.003259, -0.002065, -0.004357, -0.004273, 0.001948, 0.007622, 0.006861, 0.008507, 0.004530, 0.002972, 0.003104, 0.005942, 0.008328, 0.010419, 0.018621, 0.029462, 0.032265, 0.027998, 0.024787, 0.025643
+#*# 	0.010323, -0.000666, -0.009537, -0.006491, -0.005127, -0.008240, -0.004826, -0.001104, -0.005832, -0.009342, -0.009146, -0.004297, -0.008441, -0.008177, -0.003567, 0.005432, 0.005510, 0.006632, 0.004055, 0.000688, 0.002038, 0.003051, 0.005636, 0.007783, 0.017318, 0.025191, 0.032372, 0.028105, 0.023939, 0.021745
+#*# 	-0.002567, -0.006380, -0.012273, -0.007950, -0.011181, -0.013171, -0.008367, -0.007427, -0.008142, -0.012873, -0.011506, -0.010460, -0.009939, -0.010590, -0.005270, 0.003120, 0.003034, 0.003399, 0.001662, 0.001200, 0.000274, 0.001439, 0.002355, 0.005161, 0.016844, 0.025750, 0.031760, 0.030481, 0.025154, 0.028687
+#*# 	-0.001232, -0.004919, -0.012302, -0.011456, -0.011021, -0.011478, -0.008803, -0.006445, -0.011772, -0.012137, -0.013407, -0.009478, -0.011166, -0.010680, -0.003716, 0.002021, 0.004098, 0.004714, 0.004563, 0.005446, 0.005705, 0.004650, 0.004838, 0.008909, 0.019679, 0.029677, 0.036190, 0.034441, 0.032703, 0.027809
+#*# 	0.002597, -0.002108, -0.010688, -0.006822, -0.010236, -0.009283, -0.007995, -0.003311, -0.009187, -0.011469, -0.012891, -0.011555, -0.009963, -0.009563, -0.003847, 0.001947, 0.002003, 0.005834, 0.006912, 0.010801, 0.009976, 0.008876, 0.009573, 0.012236, 0.023528, 0.032731, 0.038237, 0.038763, 0.034573, 0.037398
+#*# 	-0.001816, -0.003864, -0.006883, -0.007425, -0.009879, -0.008548, -0.005171, -0.005408, -0.008959, -0.007624, -0.012576, -0.007528, -0.012851, -0.009996, -0.005947, -0.000558, 0.002197, 0.004539, 0.008353, 0.013694, 0.013278, 0.013246, 0.013252, 0.016304, 0.024367, 0.034443, 0.041741, 0.041612, 0.040054, 0.040330
+#*# 	-0.001886, -0.007318, -0.005977, -0.006330, -0.007707, -0.008699, -0.005638, -0.004032, -0.007189, -0.010334, -0.009626, -0.004213, -0.009338, -0.006632, -0.002957, 0.000235, 0.003830, 0.007892, 0.012297, 0.019213, 0.018468, 0.017724, 0.018470, 0.021565, 0.031049, 0.037574, 0.046440, 0.046463, 0.044661, 0.053140
+#*# 	-0.000325, -0.011917, -0.010532, -0.011287, -0.012919, -0.011430, -0.009097, -0.008911, -0.005640, -0.008264, -0.007422, -0.004978, -0.006983, -0.007634, -0.002614, 0.004009, 0.005914, 0.010101, 0.014737, 0.021061, 0.019286, 0.021105, 0.021373, 0.025285, 0.034051, 0.044483, 0.048928, 0.051892, 0.053411, 0.056420
+#*# 	-0.005773, -0.009433, -0.017266, -0.017445, -0.015839, -0.016081, -0.014527, -0.010732, -0.009478, -0.009789, -0.009896, -0.005506, -0.007206, -0.007609, 0.000594, 0.004542, 0.006268, 0.010748, 0.015186, 0.017708, 0.021628, 0.023291, 0.023327, 0.025587, 0.036278, 0.045969, 0.053297, 0.057159, 0.057599, 0.063243
+#*# 	-0.015885, -0.023709, -0.026655, -0.024369, -0.022098, -0.021328, -0.019361, -0.015971, -0.014907, -0.014600, -0.013956, -0.009622, -0.010818, -0.010778, -0.000912, 0.000233, 0.002392, 0.005554, 0.011093, 0.014131, 0.019068, 0.021375, 0.020823, 0.024568, 0.037262, 0.044853, 0.053414, 0.057964, 0.059898, 0.063575
+#*# 	-0.023451, -0.029524, -0.033897, -0.031590, -0.030782, -0.028121, -0.025448, -0.022970, -0.019576, -0.018490, -0.017386, -0.014230, -0.014958, -0.010388, -0.003910, -0.000286, 0.001508, 0.004196, 0.009282, 0.011679, 0.017459, 0.017577, 0.019352, 0.024491, 0.035655, 0.046061, 0.054821, 0.058084, 0.059427, 0.066968
+#*# 	-0.027175, -0.041342, -0.043026, -0.041048, -0.041178, -0.039018, -0.035482, -0.033767, -0.026683, -0.025416, -0.021761, -0.021232, -0.019747, -0.014500, -0.006707, -0.001008, -0.000780, 0.002203, 0.006422, 0.010346, 0.014145, 0.015594, 0.017591, 0.022227, 0.033893, 0.043580, 0.054023, 0.058371, 0.063055, 0.067253
+#*# 	-0.040190, -0.044248, -0.048283, -0.049594, -0.049026, -0.047408, -0.045549, -0.041324, -0.036594, -0.032801, -0.030678, -0.025635, -0.026196, -0.017509, -0.013271, -0.008871, -0.006335, -0.001997, 0.002192, 0.005553, 0.009874, 0.009991, 0.012528, 0.018859, 0.031393, 0.042717, 0.053757, 0.058035, 0.061181, 0.074300
+#*# 	-0.045810, -0.063179, -0.054654, -0.061159, -0.057330, -0.056787, -0.052644, -0.051657, -0.044817, -0.039320, -0.036913, -0.032807, -0.026308, -0.023266, -0.017285, -0.012160, -0.008195, -0.007370, -0.001250, 0.004494, 0.008346, 0.009902, 0.012824, 0.017178, 0.029697, 0.041525, 0.051801, 0.058505, 0.063524, 0.070526
+#*# 	-0.064708, -0.069574, -0.068015, -0.066839, -0.066156, -0.063548, -0.060457, -0.056243, -0.051488, -0.044820, -0.040542, -0.034899, -0.028676, -0.026116, -0.018132, -0.010592, -0.008235, -0.006069, -0.001476, 0.004081, 0.010568, 0.013018, 0.017460, 0.021829, 0.030787, 0.044122, 0.053697, 0.059656, 0.063186, 0.075794
+#*# 	-0.058914, -0.074093, -0.070760, -0.074438, -0.068355, -0.067894, -0.065730, -0.059225, -0.051833, -0.045307, -0.040465, -0.033960, -0.030305, -0.023455, -0.014329, -0.006766, -0.006160, -0.002188, 0.003987, 0.008887, 0.016894, 0.017560, 0.020580, 0.024768, 0.033966, 0.045310, 0.053842, 0.059592, 0.064326, 0.074986
+#*# 	-0.049228, -0.060102, -0.069744, -0.073100, -0.071218, -0.069911, -0.064909, -0.063818, -0.051189, -0.047159, -0.042694, -0.033956, -0.028964, -0.023505, -0.012763, -0.006425, -0.004879, -0.000988, 0.005178, 0.012363, 0.019352, 0.020184, 0.020652, 0.027074, 0.038990, 0.046300, 0.054913, 0.059496, 0.063435, 0.077515
+#*# 	-0.021316, -0.046294, -0.064549, -0.068824, -0.068516, -0.066779, -0.063437, -0.059802, -0.051539, -0.048049, -0.041481, -0.033168, -0.028210, -0.025298, -0.014106, -0.006669, -0.003299, 0.001960, 0.009863, 0.016460, 0.022200, 0.022605, 0.024524, 0.029069, 0.043270, 0.051956, 0.057723, 0.063803, 0.068950, 0.081120
+#*# 	0.009091, -0.014228, -0.045257, -0.058273, -0.064649, -0.063789, -0.057755, -0.054347, -0.048920, -0.043119, -0.040118, -0.034992, -0.025948, -0.020712, -0.012985, -0.002505, 0.001275, 0.006508, 0.015834, 0.021741, 0.025980, 0.028445, 0.030072, 0.035712, 0.050909, 0.062497, 0.068550, 0.072200, 0.077807, 0.093626
+#*# 	0.058450, 0.018815, -0.020615, -0.046545, -0.059154, -0.059607, -0.060286, -0.051319, -0.044128, -0.039561, -0.040254, -0.031564, -0.025646, -0.019286, -0.007710, 0.000110, 0.005951, 0.011572, 0.017824, 0.024406, 0.032044, 0.035745, 0.036045, 0.044273, 0.058298, 0.069982, 0.077161, 0.082299, 0.089406, 0.104796
+#*# 	0.106652, 0.063243, 0.013110, -0.026050, -0.049960, -0.056528, -0.056924, -0.052115, -0.040949, -0.037100, -0.034534, -0.028268, -0.021753, -0.011705, -0.001194, 0.006403, 0.011733, 0.017385, 0.023433, 0.028944, 0.037568, 0.040238, 0.044403, 0.051183, 0.066496, 0.078255, 0.086759, 0.094823, 0.102573, 0.129333
+#*# 	0.163321, 0.117852, 0.055357, 0.005117, -0.028256, -0.041217, -0.047897, -0.045172, -0.037822, -0.033095, -0.028477, -0.018452, -0.011346, -0.003388, 0.003569, 0.011285, 0.017438, 0.022888, 0.028778, 0.035749, 0.042991, 0.047881, 0.052648, 0.059118, 0.077333, 0.089747, 0.099596, 0.108120, 0.126595, 0.159594
+#*# x_count = 30
+#*# y_count = 30
+#*# mesh_x_pps = 2
+#*# mesh_y_pps = 2
+#*# algo = bicubic
+#*# tension = 0.2
+#*# min_x = 30.0
+#*# max_x = 320.0
+#*# min_y = 30.0
+#*# max_y = 320.0
+#*#
+#*# [input_shaper]
+#*# shaper_type_x = 3hump_ei
+#*# shaper_freq_x = 137.8
+#*# shaper_type_y = mzv
+#*# shaper_freq_y = 63.8
+#*#
+#*# [heater_bed]
+#*# control = pid
+#*# pid_kp = 63.599
+#*# pid_ki = 2.986
+#*# pid_kd = 338.665
+#*#
+#*# [extruder]
+#*# control = pid
+#*# pid_kp = 25.046
+#*# pid_ki = 2.385
+#*# pid_kd = 65.744
+#*#
+#*# [scanner]
+#*# mode = touch
+#*# scanner_touch_z_offset = 0.060
+#*#
+#*# [scanner model default]
+#*# model_coef = 1.3953080026388835,
+#*# 	1.8201065361935322,
+#*# 	0.7551978767233248,
+#*# 	0.36315681988470333,
+#*# 	0.3826571701562609,
+#*# 	0.3647820133050305,
+#*# 	-0.20533870746828145,
+#*# 	-0.30891256825135793,
+#*# 	0.2231375138517745,
+#*# 	0.21326949870368908
+#*# model_domain = 3.2196977932699194e-07,3.3359312084953424e-07
+#*# model_range = 0.100000,5.000000
+#*# model_temp = 24.454113
+#*# model_offset = 0.00000
+#*# model_mode = touch
+#*# model_fw_version = CARTOGRAPHER 5.0.0
